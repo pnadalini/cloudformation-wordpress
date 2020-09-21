@@ -1,0 +1,47 @@
+AWSTemplateFormatVersion: '2010-09-09'
+
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: SSH Key to use
+  InstanceTypeECS:
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - m4.large
+      - m4.xlarge
+      - c4.large
+      - c4.xlarge
+  EnvironmentName:
+    Type: String
+    Description: An environment name that is prefixed to resource names
+  HostedZoneName:
+    Type: String
+  HostedZoneId:
+    Type: String
+  S3Url:
+    Type: String
+    Description: S3 bucket Url where the yaml files are uploaded
+
+Resources:
+  VPC:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${bucketUrl}/vpc.yaml
+      TimeoutInMinutes: '60'
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+  
+  EC2:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${bucketUrl}/ec2.yaml
+      TimeoutInMinutes: '60'
+      Parameters:
+        VpcId: !GetAtt VPC.Outputs.VPC
+        SubnetId: !GetAtt VPC.Outputs.PublicSubnet1
+        EnvironmentName: !Ref EnvironmentName
+        KeyName: !Ref KeyName

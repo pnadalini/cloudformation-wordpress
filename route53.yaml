@@ -1,0 +1,25 @@
+Description: This template configures a Route 53 with the provided parameters,
+  which will provide a DNS (Domain Name System) record for the ResourceRecords
+
+Parameters:
+  HostedZoneId:
+    Type: String
+    Description: The ID of the hosted zone that you want to create records in
+
+  Name:
+    Type: String
+    Description: The name of the record that you want to create, update, or delete
+
+  ResourceRecords:
+    Type: CommaDelimitedList
+    Description: One or more IP addresses in IPv4 format
+
+Resources:
+  myDNSRecord:
+    Type: AWS::Route53::RecordSet
+    Properties:
+      HostedZoneId : !Ref HostedZoneId
+      Name: !Ref Name
+      ResourceRecords: !Ref ResourceRecords
+      TTL: '900'
+      Type: A
