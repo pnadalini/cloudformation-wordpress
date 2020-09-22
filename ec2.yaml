@@ -9,7 +9,7 @@ Parameters:
     Description: An environment name that is prefixed to resource names
     Type: String
   VpcId:
-    Description: The Subnet where the EC2 Instance will be launched
+    Description: The VPC where the EC2 Instance will be launched
     Type: String
   SubnetId:
     Description: The Subnet where the EC2 Instance will be launched

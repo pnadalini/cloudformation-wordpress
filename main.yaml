@@ -18,27 +18,70 @@ Parameters:
   EnvironmentName:
     Type: String
     Description: An environment name that is prefixed to resource names
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    ConstraintDescription: >-
+      Must begin with a letter and must not end with a hyphen or contain two
+      consecutive hyphens.
   HostedZoneName:
     Type: String
   HostedZoneId:
     Type: String
-  S3Url:
+  BucketUrl:
     Type: String
     Description: S3 bucket Url where the yaml files are uploaded
+  DBName:
+    Default: wordpress-db
+    Description: DB name
+    Type: String
+    MinLength: '1'
+    MaxLength: '64'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    ConstraintDescription: Must begin with a letter and contain only alphanumeric characters.
+  DBUsername:
+    NoEcho: 'true'
+    Default: wordpress-admin
+    Description: Username for MySQL database access
+    Type: String
+    MinLength: '1'
+    MaxLength: '16'
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    ConstraintDescription: must begin with a letter and contain only alphanumeric characters.
+  DBPassword:
+    NoEcho: 'true'
+    Default: wpPassword123
+    Description: Password MySQL database access
+    Type: String
+    MinLength: '8'
+    MaxLength: '41'
+    AllowedPattern: '[a-zA-Z0-9]*'
+    ConstraintDescription: must contain only alphanumeric characters.
 
 Resources:
   VPC:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub ${bucketUrl}/vpc.yaml
+      TemplateURL: !Sub ${BucketUrl}/vpc.yaml
       TimeoutInMinutes: '60'
       Parameters:
         EnvironmentName: !Ref EnvironmentName
   
+  RDS:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${BucketUrl}/rds.yaml
+      TimeoutInMinutes: '60'
+      Parameters:
+        EnvironmentName: !Ref EnvironmentName
+        DBUsername: !Ref DBUsername
+        DBPassword: !Ref DBPassword
+        VpcId: !GetAtt VPC.Outputs.VPC
+        PrivateSubnet1: !GetAtt VPC.Outputs.PrivateSubnet1
+        PrivateSubnet2: !GetAtt VPC.Outputs.PrivateSubnet2
+  
   EC2:
     Type: AWS::CloudFormation::Stack
     Properties:
-      TemplateURL: !Sub ${bucketUrl}/ec2.yaml
+      TemplateURL: !Sub ${BucketUrl}/ec2.yaml
       TimeoutInMinutes: '60'
       Parameters:
         VpcId: !GetAtt VPC.Outputs.VPC
