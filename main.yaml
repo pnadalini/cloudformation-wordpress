@@ -24,13 +24,15 @@ Parameters:
       consecutive hyphens.
   HostedZoneName:
     Type: String
+    Description: The domain name that you want to create, update, or delete (example.com)
   HostedZoneId:
     Type: String
+    Description: The ID of the hosted zone that you want to create records in Route53
   BucketUrl:
     Type: String
     Description: S3 bucket Url where the yaml files are uploaded
   DBName:
-    Default: wordpress-db
+    Default: wordpressdb
     Description: DB name
     Type: String
     MinLength: '1'
@@ -39,7 +41,7 @@ Parameters:
     ConstraintDescription: Must begin with a letter and contain only alphanumeric characters.
   DBUsername:
     NoEcho: 'true'
-    Default: wordpress-admin
+    Default: wordpressadmin
     Description: Username for MySQL database access
     Type: String
     MinLength: '1'
@@ -88,3 +90,18 @@ Resources:
         SubnetId: !GetAtt VPC.Outputs.PublicSubnet1
         EnvironmentName: !Ref EnvironmentName
         KeyName: !Ref KeyName
+        SecurityGroup: !GetAtt RDS.Outputs.EC2SecurityGroup
+        DBAddress: !GetAtt RDS.Outputs.Endpoint
+        DBName: !Ref DBName
+        DBUsername: !Ref DBUsername
+        DBPassword: !Ref DBPassword
+
+  Route53:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub ${BucketUrl}/route53.yaml
+      TimeoutInMinutes: '60'
+      Parameters:
+        HostedZoneId: !Ref HostedZoneId
+        Name: !Ref HostedZoneName
+        ResourceRecords: !GetAtt EC2.Outputs.Ec2PublicId

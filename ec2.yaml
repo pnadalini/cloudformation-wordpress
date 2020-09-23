@@ -32,29 +32,61 @@ Parameters:
       - m4.xlarge
       - c4.large
       - c4.xlarge
+  SecurityGroup:
+    Type: String
+    Description: Security group for the EC2 Instance
+  DBAddress:
+    Type: String
+    Description: Database endpoint
+  DBName:
+    Type: String
+    Description: Database name
+  DBUsername:
+    Type: String
+    Description: Username for MySQL database access
+  DBPassword:
+    Type: String
+    Description: Password MySQL database access
 
 Resources:
-  Ec2SecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: Allow http to host
-      VpcId: !Ref VpcId
-      SecurityGroupIngress:
-      - IpProtocol: tcp
-        FromPort: 80
-        ToPort: 80
-        CidrIp: 0.0.0.0/0
-      SecurityGroupEgress:
-      - IpProtocol: tcp
-        FromPort: 80
-        ToPort: 80
-        CidrIp: 0.0.0.0/0
-      Tags:
-        - Key: Name
-          Value: !Sub ${EnvironmentName}-sg
-
   EC2Instance:
     Type: AWS::EC2::Instance
+    Metadata:
+      'AWS::CloudFormation::Init':
+        config:
+          files:
+            /wp-config.php:
+              content: !Join 
+                - ''
+                - - |
+                    <?php
+                  - 'define(''DB_NAME'',          '''
+                  - !Ref DBName
+                  - |
+                    ');
+                  - 'define(''DB_USER'',          '''
+                  - !Ref DBUsername
+                  - |
+                    ');
+                  - 'define(''DB_PASSWORD'',      '''
+                  - !Ref DBPassword
+                  - |
+                    ');
+                  - 'define(''DB_HOST'',          '''
+                  - !Ref DBAddress
+                  - |
+                    ');
+                  - |
+                    define('DB_CHARSET',       'utf8');
+                  - |
+                    define('DB_COLLATE',       '');
+                  - |
+                    $table_prefix = 'wp_';
+                  - |
+                    require_once( ABSPATH . 'wp-settings.php' );
+              mode: '000644'
+              owner: root
+              group: root
     Properties:
       KeyName: !Ref KeyName
       ImageId: !Ref ImageId
@@ -64,17 +96,26 @@ Resources:
         DeleteOnTermination: True
         DeviceIndex: 0
         GroupSet: 
-          - !Ref Ec2SecurityGroup
+          - !Ref SecurityGroup
         SubnetId: !Ref SubnetId
       UserData: 
         Fn::Base64: !Sub |
           #!/bin/bash
           yum update -y
-          yum install httpd -y
-          service httpd start
-          chkconfig httpd on
+          yum install httpd php php-mysql -y
           cd /var/www/html
-          echo "<html><h1>This is WebServer 01</h1></html>" > index.html
+          wget https://wordpress.org/wordpress-5.1.1.tar.gz
+          tar -xzf wordpress-5.1.1.tar.gz
+          cp -r wordpress/* /var/www/html/
+          cp -r wp-config.php /var/www/html/wordpress/wp-config.php
+          rm -rf wordpress
+          rm -rf wordpress-5.1.1.tar.gz
+          chmod -R 755 wp-content
+          chown -R apache:apache wp-content
+          wget https://s3.amazonaws.com/bucketforwordpresslab-donotdelete/htaccess.txt
+          mv htaccess.txt .htaccess
+          chkconfig httpd on
+          service httpd start
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-ec2
