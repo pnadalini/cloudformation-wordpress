@@ -10,7 +10,7 @@ Parameters:
       Must begin with a letter and must not end with a hyphen or contain two
       consecutive hyphens.
   DBName:
-    Default: mydb
+    Default: mydatabase
     Description: My database name
     Type: String
     MinLength: '1'
@@ -99,19 +99,23 @@ Resources:
       GroupDescription: EC2 Access Security Group
       DBSecurityGroupIngress:
         EC2SecurityGroupId: !Ref EC2SecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-db-sg
 
   MyDB:
     Type: 'AWS::RDS::DBInstance'
     Properties:
-      DBInstanceIdentifier: !Sub ${EnvironmentName}-mysql-id
-      DBName: !Ref DBName
+      DBInstanceIdentifier: !Sub ${EnvironmentName}-mysql
+      DBName: !Sub ${DBName}
       DBInstanceClass: !Ref DBInstanceClass
       AllocatedStorage: !Ref DBAllocatedStorage
-      DBSubnetGroupName: !Ref DBSubnetGroupName
+      DBSubnetGroupName: !Ref DBSubnetGroup
       Engine: MySQL
       MasterUsername: !Ref DBUsername
       MasterUserPassword: !Ref DBPassword
-      DBSubnetGroupName: !Ref DBSubnetGroup
+      PubliclyAccessible: false
+      Port: 3306
       DBSecurityGroups:
       - Ref: DBSecurityGroup
 

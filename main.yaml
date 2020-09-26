@@ -32,7 +32,7 @@ Parameters:
     Type: String
     Description: S3 bucket Url where the yaml files are uploaded
   DBName:
-    Default: wordpressdb
+    Default: wordpress
     Description: DB name
     Type: String
     MinLength: '1'
@@ -63,7 +63,6 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub ${BucketUrl}/vpc.yaml
-      TimeoutInMinutes: '60'
       Parameters:
         EnvironmentName: !Ref EnvironmentName
   
@@ -71,9 +70,9 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub ${BucketUrl}/rds.yaml
-      TimeoutInMinutes: '60'
       Parameters:
         EnvironmentName: !Ref EnvironmentName
+        DBName: !Ref DBName
         DBUsername: !Ref DBUsername
         DBPassword: !Ref DBPassword
         VpcId: !GetAtt VPC.Outputs.VPC
@@ -84,7 +83,6 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub ${BucketUrl}/ec2.yaml
-      TimeoutInMinutes: '60'
       Parameters:
         VpcId: !GetAtt VPC.Outputs.VPC
         SubnetId: !GetAtt VPC.Outputs.PublicSubnet1
@@ -100,7 +98,6 @@ Resources:
     Type: AWS::CloudFormation::Stack
     Properties:
       TemplateURL: !Sub ${BucketUrl}/route53.yaml
-      TimeoutInMinutes: '60'
       Parameters:
         HostedZoneId: !Ref HostedZoneId
         Name: !Ref HostedZoneName

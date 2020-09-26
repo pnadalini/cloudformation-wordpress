@@ -17,10 +17,6 @@ Parameters:
   KeyName:
     Type: AWS::EC2::KeyPair::KeyName
     Description: SSH Key to use
-  ImageId:
-    Description: An AMI ID for the EC2 Instance
-    Type: String
-    Default: ami-0c94855ba95c71c99
   InstanceType:
     Type: String
     Default: t2.micro
@@ -48,48 +44,68 @@ Parameters:
     Type: String
     Description: Password MySQL database access
 
+Mappings:
+  AWSInstanceType2Arch:
+    t1.micro:
+      Arch: PV64
+    t2.micro:
+      Arch: HVM64
+    t2.small:
+      Arch: HVM64
+    t2.medium:
+      Arch: HVM64
+    m3.medium:
+      Arch: PV64
+    m3.large:
+      Arch: PV64
+    m3.xlarge:
+      Arch: PV64
+    m3.2xlarge:
+      Arch: PV64
+  AWSRegionArch2AMI:
+    us-east-1:
+      PV64: ami-7c807d14
+      HVM64: ami-76817c1e
+    us-west-2:
+      PV64: ami-1b3b462b
+      HVM64: ami-d13845e1
+    us-west-1:
+      PV64: ami-a8d3d4ed
+      HVM64: ami-f0d3d4b5
+    eu-west-1:
+      PV64: ami-672ce210
+      HVM64: ami-892fe1fe
+    ap-southeast-1:
+      PV64: ami-56b7eb04
+      HVM64: ami-a6b6eaf4
+    ap-northeast-1:
+      PV64: ami-25dd9324
+      HVM64: ami-29dc9228
+    ap-southeast-2:
+      PV64: ami-6bf99c51
+      HVM64: ami-d9fe9be3
+    sa-east-1:
+      PV64: ami-c7e649da
+      HVM64: ami-c9e649d4
+    us-gov-west-1:
+      PV64: ami-ab4a2d88
+      HVM64: ami-a54a2d86
+    cn-north-1:
+      PV64: ami-cab82af3
+      HVM64: ami-ccb82af5
+
 Resources:
   EC2Instance:
     Type: AWS::EC2::Instance
-    Metadata:
-      'AWS::CloudFormation::Init':
-        config:
-          files:
-            /wp-config.php:
-              content: !Join 
-                - ''
-                - - |
-                    <?php
-                  - 'define(''DB_NAME'',          '''
-                  - !Ref DBName
-                  - |
-                    ');
-                  - 'define(''DB_USER'',          '''
-                  - !Ref DBUsername
-                  - |
-                    ');
-                  - 'define(''DB_PASSWORD'',      '''
-                  - !Ref DBPassword
-                  - |
-                    ');
-                  - 'define(''DB_HOST'',          '''
-                  - !Ref DBAddress
-                  - |
-                    ');
-                  - |
-                    define('DB_CHARSET',       'utf8');
-                  - |
-                    define('DB_COLLATE',       '');
-                  - |
-                    $table_prefix = 'wp_';
-                  - |
-                    require_once( ABSPATH . 'wp-settings.php' );
-              mode: '000644'
-              owner: root
-              group: root
     Properties:
       KeyName: !Ref KeyName
-      ImageId: !Ref ImageId
+      ImageId: !FindInMap 
+        - AWSRegionArch2AMI
+        - !Ref 'AWS::Region'
+        - !FindInMap 
+          - AWSInstanceType2Arch
+          - !Ref InstanceType
+          - Arch
       InstanceType: !Ref InstanceType
       NetworkInterfaces:
       - AssociatePublicIpAddress: True
@@ -107,7 +123,6 @@ Resources:
           wget https://wordpress.org/wordpress-5.1.1.tar.gz
           tar -xzf wordpress-5.1.1.tar.gz
           cp -r wordpress/* /var/www/html/
-          cp -r wp-config.php /var/www/html/wordpress/wp-config.php
           rm -rf wordpress
           rm -rf wordpress-5.1.1.tar.gz
           chmod -R 755 wp-content
@@ -116,6 +131,11 @@ Resources:
           mv htaccess.txt .htaccess
           chkconfig httpd on
           service httpd start
+          cp wp-config-sample.php wp-config.php
+          sed -i 's/database_name_here/${DBName}/g' wp-config.php
+          sed -i 's/localhost/${DBAddress}/g' wp-config.php
+          sed -i 's/username_here/${DBUsername}/g' wp-config.php
+          sed -i 's/password_here/${DBPassword}/g' wp-config.php
       Tags:
         - Key: Name
           Value: !Sub ${EnvironmentName}-ec2

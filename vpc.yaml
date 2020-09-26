@@ -59,7 +59,7 @@ Resources:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      AvailabilityZone: us-east-1b
+      AvailabilityZone: us-east-1a
       CidrBlock: !Ref PublicSubnet1CIDR
       Tags:
         - Key: Name
@@ -69,7 +69,7 @@ Resources:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      AvailabilityZone: us-east-1a
+      AvailabilityZone: us-east-1b
       CidrBlock: !Ref PublicSubnet2CIDR
       Tags:
         - Key: Name
@@ -79,7 +79,7 @@ Resources:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      AvailabilityZone: us-east-1b
+      AvailabilityZone: us-east-1a
       CidrBlock: !Ref PrivateSubnet1CIDR
       Tags:
         - Key: Name
@@ -89,7 +89,7 @@ Resources:
     Type: AWS::EC2::Subnet
     Properties:
       VpcId: !Ref VPC
-      AvailabilityZone: us-east-1a
+      AvailabilityZone: us-east-1b
       CidrBlock: !Ref PrivateSubnet2CIDR
       Tags:
         - Key: Name
